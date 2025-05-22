@@ -18,6 +18,7 @@ pdfminer.six==20250506
 pycparser==2.22
 pydantic==2.11.4
 pydantic_core==2.33.2
+PyMuPDF==1.25.5
 python-docx==1.1.2
 python-dotenv==1.1.0
 python-multipart==0.0.20
