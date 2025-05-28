@@ -53,20 +53,42 @@ def extract_text_from_docx(file) -> str:
     return " ".join([p.text for p in doc.paragraphs])
 
 # Extra text from URL
-import requests
-from bs4 import BeautifulSoup
-def extract_text_from_url(url: str) -> str:
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(url, headers=headers)
-        soup = BeautifulSoup(response.content, "html.parser")
+# import requests
+# from bs4 import BeautifulSoup
+# def extract_text_from_url(url: str) -> str:
+#     try:
+#         headers = {"User-Agent": "Mozilla/5.0"}
+#         response = requests.get(url, headers=headers)
+#         soup = BeautifulSoup(response.content, "html.parser")
 
-        # Get visible text only
-        text = soup.get_text(separator=" ", strip=True)
+#         # Get visible text only
+#         text = soup.get_text(separator=" ", strip=True)
+#         return text
+
+#     except Exception as e:
+#         raise ValueError(f"Error extracting text from URL: {e}")
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+import time
+
+def extract_text_from_linkedin(url: str) -> str:
+    try:
+        options = Options()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        driver = webdriver.Chrome(options=options)
+
+        driver.get(url)
+        time.sleep(5)  # Wait for content to load
+
+        text = driver.find_element(By.TAG_NAME, 'body').text
+        driver.quit()
         return text
 
     except Exception as e:
-        raise ValueError(f"Error extracting text from URL: {e}")
+        return f"Error scraping LinkedIn: {e}"
     
 ####################################### Extractors #######################################
 
@@ -173,14 +195,25 @@ async def parse_resume(file: UploadFile = File(...)):
         return JSONResponse(content={"error": str(e)}, status_code=500)
     
 
+# @app.post("/parse/url")
+# async def parse_resume_from_url(url: str):
+#     try:
+#         text = extract_text_from_url(url)
+#         text = preprocess_text(text)
+#         extracted_data = extract_data_with_gpt(text)
+#         overall_score = calculate_overall_confidence(extracted_data)
+#         extracted_data["overall_confidence"] = overall_score
+#         return extracted_data
+#     except Exception as e:
+#         return JSONResponse(content={"error": str(e)}, status_code=500)
+
 @app.post("/parse/url")
 async def parse_resume_from_url(url: str):
     try:
-        text = extract_text_from_url(url)
+        text = extract_text_from_linkedin(url)
         text = preprocess_text(text)
         extracted_data = extract_data_with_gpt(text)
-        overall_score = calculate_overall_confidence(extracted_data)
-        extracted_data["overall_confidence"] = overall_score
+        extracted_data["overall_confidence"] = calculate_overall_confidence(extracted_data)
         return extracted_data
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
