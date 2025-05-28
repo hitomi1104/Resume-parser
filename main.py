@@ -29,7 +29,7 @@ client = OpenAI(api_key=api_key)
 # Initialize FastAPI app
 app = FastAPI()
 
-
+####################################### Extractors #######################################
 # Extract text from PDF
 def extract_text_from_pdf(file) -> str:
     text_parts = []
@@ -51,6 +51,25 @@ def extract_text_from_pdf(file) -> str:
 def extract_text_from_docx(file) -> str:
     doc = docx.Document(file.file)
     return " ".join([p.text for p in doc.paragraphs])
+
+# Extra text from URL
+import requests
+from bs4 import BeautifulSoup
+def extract_text_from_url(url: str) -> str:
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, headers=headers)
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Get visible text only
+        text = soup.get_text(separator=" ", strip=True)
+        return text
+
+    except Exception as e:
+        raise ValueError(f"Error extracting text from URL: {e}")
+    
+####################################### Extractors #######################################
+
 
 def preprocess_text(text: str) -> str:
     # Normalize line breaks
@@ -150,6 +169,19 @@ async def parse_resume(file: UploadFile = File(...)):
         extracted_data["overall_confidence"] = overall_score
         return extracted_data
 
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+    
+
+@app.post("/parse/url")
+async def parse_resume_from_url(url: str):
+    try:
+        text = extract_text_from_url(url)
+        text = preprocess_text(text)
+        extracted_data = extract_data_with_gpt(text)
+        overall_score = calculate_overall_confidence(extracted_data)
+        extracted_data["overall_confidence"] = overall_score
+        return extracted_data
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
