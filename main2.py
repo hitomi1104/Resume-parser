@@ -28,7 +28,9 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 # LandingAI Setup
-landingai_api_key = os.getenv("LANDINGAI_API_KEY")
+landingai_api_key = os.getenv("VISION_AGENT_API_KEY")
+if not landingai_api_key:
+    raise ValueError("VISION_AGENT_API_KEY is not set. Check your .env file.")
 
 # FastAPI app
 app = FastAPI()
@@ -138,10 +140,51 @@ async def parse_linkedin(url: str):
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
+from typing import List
+from fastapi import UploadFile, File
+from fastapi.responses import JSONResponse
+
 @app.post("/parse/images")
-async def parse_images_with_landingai(files: List[UploadFile] = File(...)):
-    result = extract_with_landingai(files)
-    return result
+@app.post("/parse/images")
+async def parse_multiple_images_with_landingai(files: List[UploadFile] = File(...)):
+    if not landingai_api_key:
+        return JSONResponse(content={"error": "LandingAI API key not loaded"}, status_code=500)
+
+    results = []
+
+    for file in files:
+        if not file.filename.lower().endswith((".png", ".jpg", ".jpeg")):
+            continue
+
+        image_bytes = file.file.read()  # ✅ use sync read here
+
+        headers = {
+            "Authorization": f"Bearer {landingai_api_key}",
+        }
+
+        files_payload = {
+            "image": (file.filename, image_bytes, file.content_type),
+        }
+
+        try:
+            response = requests.post(
+                "https://api.landing.ai/v2/inference/resume-parser",  # ✅ fixed double quotes
+                headers=headers,
+                files=files_payload
+            )
+
+            if response.status_code == 200:
+                results.append(response.json())
+            else:
+                results.append({
+                    "filename": file.filename,
+                    "error": response.json().get("message", "LandingAI request failed.")
+                })
+
+        except Exception as e:
+            results.append({"filename": file.filename, "error": str(e)})
+
+    return {"results": results}
 
 @app.get("/")
 def root():
