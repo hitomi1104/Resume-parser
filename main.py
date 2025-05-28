@@ -186,35 +186,19 @@ def extract_data_with_gpt(text: str) -> Dict:
         return json.loads(raw_output)
     except json.JSONDecodeError:
         return {"raw_output": raw_output}  # fallback if JSON is invalid
+    
+
+
+
+
 
 # API endpoint
-# @app.post("/parse")
-# async def parse_resume(file: UploadFile = File(...)):
-#     if file.filename.endswith(".pdf"):
-#         text = extract_text_from_pdf(file)
-#     elif file.filename.endswith(".docx"):
-#         text = extract_text_from_docx(file)
-#     else:
-#         return JSONResponse(content={"error": "Unsupported file type"}, status_code=400)
-
-#     try:
-#         text = preprocess_text(text)
-#         extracted_data = extract_data_with_gpt(text)
-#         overall_score = calculate_overall_confidence(extracted_data)
-#         extracted_data["overall_confidence"] = overall_score
-#         return extracted_data
-
-#     except Exception as e:
-#         return JSONResponse(content={"error": str(e)}, status_code=500)
-
 @app.post("/parse")
 async def parse_resume(file: UploadFile = File(...)):
     if file.filename.endswith(".pdf"):
         text = extract_text_from_pdf(file)
     elif file.filename.endswith(".docx"):
         text = extract_text_from_docx(file)
-    elif file.filename.endswith((".png", ".jpg", ".jpeg")):
-        text = extract_text_from_image(file)
     else:
         return JSONResponse(content={"error": "Unsupported file type"}, status_code=400)
 
@@ -224,6 +208,7 @@ async def parse_resume(file: UploadFile = File(...)):
         overall_score = calculate_overall_confidence(extracted_data)
         extracted_data["overall_confidence"] = overall_score
         return extracted_data
+
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
     
@@ -250,6 +235,29 @@ async def parse_resume_from_url(url: str):
         return extracted_data
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+    
+
+from typing import List
+from fastapi import UploadFile, File
+from PIL import Image
+import pytesseract
+import io
+
+@app.post("/parse/images")
+async def parse_multiple_images(files: List[UploadFile] = File(...)):
+    extracted_texts = []
+
+    for file in files:
+        if file.filename.lower().endswith((".png", ".jpg", ".jpeg")):
+            image = Image.open(io.BytesIO(await file.read()))
+            text = pytesseract.image_to_string(image)
+            extracted_texts.append(text)
+
+    combined_text = preprocess_text("\n\n".join(extracted_texts))
+    extracted_data = extract_data_with_gpt(combined_text)
+    overall_score = calculate_overall_confidence(extracted_data)
+    extracted_data["overall_confidence"] = overall_score
+    return extracted_data
     
 
 
