@@ -1,0 +1,63 @@
+{
+  "full_name": {
+    "value": "Jane Smith",
+    "confidence": 0.95
+  },
+  "email": {
+    "value": "jane_smith@email.com",
+    "confidence": 0.9
+  },
+  "phone_number": {
+    "value": "555-987-6543",
+    "confidence": 0.85
+  },
+  "linkedin": {
+    "value": "linkedin.com/in/jane-smith",
+    "confidence": 0.8
+  },
+  "github": {
+    "value": "github.com/janesmith",
+    "confidence": 0.85
+  },
+  "location": {
+    "value": "Austin, TX",
+    "confidence": 0.9
+  },
+  "summary": {
+    "value": "I’m a data analyst with a passion for data visualization and automation.",
+    "confidence": 0.95
+  },
+  "skills": {
+    "value": [
+      "Excel",
+      "Tableau",
+      "Python",
+      "SQL",
+      "Pandas",
+      "Seaborn"
+    ],
+    "confidence": 0.9
+  },
+  "education": {
+    "value": [
+      {
+        "degree": "B.A. in Economics",
+        "institution": "University of Texas",
+        "dates": "2016 - 2020"
+      }
+    ],
+    "confidence": 0.95
+  },
+  "work_experience": {
+    "value": [
+      {
+        "job_title": "Data Analyst",
+        "company": "BlueSky Analytics",
+        "dates": "March 2021 - Present",
+        "description": "Worked with large datasets to extract insights and build dashboards. Automated monthly reports using Python"
+      }
+    ],
+    "confidence": 0.9
+  },
+  "overall_confidence": 0.9
+}

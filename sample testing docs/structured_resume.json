@@ -1,0 +1,68 @@
+{
+  "full_name": {
+    "value": "John Doe",
+    "confidence": 0.95
+  },
+  "email": {
+    "value": "john.doe@email.com",
+    "confidence": 0.9
+  },
+  "phone_number": {
+    "value": "+1 (555) 123-4567",
+    "confidence": 0.85
+  },
+  "linkedin": {
+    "value": "https://linkedin.com/in/johndoe",
+    "confidence": 0.8
+  },
+  "github": {
+    "value": "https://github.com/johndoe",
+    "confidence": 0.8
+  },
+  "location": {
+    "value": "New York, NY",
+    "confidence": 0.9
+  },
+  "summary": {
+    "value": "Experienced software engineer with 5+ years in backend systems, cloud computing, and API development.",
+    "confidence": 0.85
+  },
+  "skills": {
+    "value": [
+      "Python",
+      "FastAPI",
+      "Flask",
+      "AWS",
+      "Docker",
+      "Kubernetes",
+      "PostgreSQL",
+      "MongoDB",
+      "Git",
+      "CI/CD"
+    ],
+    "confidence": 0.85
+  },
+  "education": {
+    "value": {
+      "degree": "B.S. in Computer Science",
+      "institution": "University of California, Berkeley",
+      "dates": "2014 – 2018"
+    },
+    "confidence": 0.9
+  },
+  "work_experience": [
+    {
+      "job_title": "Software Engineer",
+      "company": "Acme Inc",
+      "dates": "Jan 2020 – Present",
+      "description": "Developed REST APIs and integrated with internal microservices. Led migration to AWS Lambda and S3."
+    },
+    {
+      "job_title": "Backend Developer",
+      "company": "TechCorp Solutions",
+      "dates": "Jun 2018 – Dec 2019",
+      "description": "Built scalable backend with Flask. Managed PostgreSQL schema and optimization."
+    }
+  ],
+  "overall_confidence": 0.87
+}

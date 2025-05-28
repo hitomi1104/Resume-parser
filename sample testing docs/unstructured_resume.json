@@ -1,0 +1,66 @@
+{
+  "full_name": {
+    "value": "Michael Lee",
+    "confidence": 0.95
+  },
+  "email": {
+    "value": "ml@example.com",
+    "confidence": 0.9
+  },
+  "phone_number": {
+    "value": "(321) 654-0987",
+    "confidence": 0.85
+  },
+  "linkedin_url": {
+    "value": null,
+    "confidence": 0
+  },
+  "github_url": {
+    "value": null,
+    "confidence": 0
+  },
+  "location": {
+    "value": "Boston MA",
+    "confidence": 0.9
+  },
+  "summary": {
+    "value": "Freelanced — data wrangling, automation, chatbot projects. Worked with CSVs, APIs, email automation. Was at StartOps for 2 years. Helped build internal tools in Python.",
+    "confidence": 0.85
+  },
+  "skills": {
+    "value": [
+      "Python",
+      "APIs",
+      "Automation",
+      "Excel",
+      "Troubleshooting"
+    ],
+    "confidence": 0.85
+  },
+  "education": {
+    "value": {
+      "degree": null,
+      "institution": "Boston College",
+      "dates": "2017 or 2018"
+    },
+    "confidence": 0.8
+  },
+  "work_experience": {
+    "value": [
+      {
+        "job_title": "Freelanced",
+        "company": null,
+        "dates": null,
+        "description": "data wrangling, automation, chatbot projects"
+      },
+      {
+        "job_title": "StartOps",
+        "company": null,
+        "dates": "2 years",
+        "description": "Helped build internal tools in Python"
+      }
+    ],
+    "confidence": 0.85
+  },
+  "overall_confidence": 0.69
+}

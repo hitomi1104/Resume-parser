@@ -1,0 +1,59 @@
+{
+  "full_name": {
+    "value": null,
+    "confidence": 0
+  },
+  "email": {
+    "value": null,
+    "confidence": 0
+  },
+  "phone_number": {
+    "value": null,
+    "confidence": 0
+  },
+  "linkedin": {
+    "value": null,
+    "confidence": 0
+  },
+  "github": {
+    "value": null,
+    "confidence": 0
+  },
+  "location": {
+    "value": "Remote",
+    "confidence": 0.85
+  },
+  "summary": {
+    "value": "Seeking an experienced Business Intelligence (BI) Analyst with AI skills to drive strategic decision-making and uncover actionable business opportunities.",
+    "confidence": 0.92
+  },
+  "skills": {
+    "value": [
+      "Business Intelligence",
+      "AI",
+      "Data Analysis",
+      "Dashboard Development",
+      "AI Development",
+      "Data Modeling"
+    ],
+    "confidence": 0.88
+  },
+  "education": {
+    "value": [
+      "Bachelor's degree in Business, Mathematics, Economics, Computer Science, Information Management or related field"
+    ],
+    "confidence": 0.85
+  },
+  "work_experience": {
+    "value": [
+      {
+        "job_title": "Business Intelligence (BI) Analyst",
+        "company": "The PYE Group, LLC",
+        "dates": "5+ years",
+        "description": "Combining traditional BI skills with advanced AI techniques to extract insights, drive strategic decision-making, and uncover actionable business opportunities."
+      }
+    ],
+    "confidence": 0.92
+  },
+  "overall_confidence": 0.44
+}

@@ -1,0 +1,86 @@
+{
+  "full_name": {
+    "value": "Hitomi Hoshino",
+    "confidence": 0.95
+  },
+  "email": {
+    "value": "hhitomin1104@gmail.com",
+    "confidence": 0.95
+  },
+  "phone_number": {
+    "value": "+1(424) 535-4746",
+    "confidence": 0.85
+  },
+  "linkedin": {
+    "value": "https://www.linkedin.com/in/hhoshino/",
+    "confidence": 0.9
+  },
+  "github": {
+    "value": "https://github.com/hitomi1104",
+    "confidence": 0.9
+  },
+  "location": {
+    "value": "Los Angeles, CA",
+    "confidence": 0.9
+  },
+  "summary": {
+    "value": "Experienced Data Scientist with expertise in Python, SQL, machine learning, and AI. Strong background in project management and leadership roles.",
+    "confidence": 0.85
+  },
+  "skills": {
+    "value": [
+      "Python",
+      "SQL",
+      "MATLAB",
+      "Pandas",
+      "Numpy",
+      "Scikit-learn",
+      "FastAPI",
+      "Tableau",
+      "Matplotlib",
+      "Seaborn",
+      "AI/ML",
+      "Deep Learning",
+      "Git",
+      "GitHub",
+      "Statistics",
+      "Project Management",
+      "Leadership"
+    ],
+    "confidence": 0.9
+  },
+  "education": {
+    "value": [
+      {
+        "degree": "Bachelor of Mathematics",
+        "institution": "University of California, Irvine",
+        "dates": "Sep 2021 - Sep 2023"
+      }
+    ],
+    "confidence": 0.9
+  },
+  "work_experience": {
+    "value": [
+      {
+        "job_title": "Jr. Implementation Engineer",
+        "company": "Osa Commerce",
+        "dates": "Mar 2024 - Mar 2025",
+        "description": "- Designed and developed a UI prototype integrating time series models for demand forecasting..."
+      },
+      {
+        "job_title": "Project Mentor",
+        "company": "Irvine Tech Hub",
+        "dates": "Jan 2024 - Mar 2024",
+        "description": "- Mentoring students in six diverse projects, including OCR (Optical Character Recognition) and ERPnext..."
+      },
+      {
+        "job_title": "Data Scientist, Intern",
+        "company": "Vena Vitals",
+        "dates": "Jun 2023 - Oct 2023",
+        "description": "- Extracted insights from the company’s internal clinical database, driving a more informed understanding of clinical trends and patterns..."
+      }
+    ],
+    "confidence": 0.9
+  },
+  "overall_confidence": 0.9
+}
