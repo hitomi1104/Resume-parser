@@ -90,6 +90,19 @@ def extract_text_from_linkedin(url: str) -> str:
     except Exception as e:
         return f"Error scraping LinkedIn: {e}"
     
+# Extract text from image using OCR (Tesseract OCR for png, .jpg, .jpeg)
+import pytesseract
+from PIL import Image
+from io import BytesIO
+
+def extract_text_from_image(file) -> str:
+    try:
+        image = Image.open(BytesIO(file.file.read()))
+        text = pytesseract.image_to_string(image)
+        return text
+    except Exception as e:
+        raise ValueError(f"Error extracting text from image: {e}")
+    
 ####################################### Extractors #######################################
 
 
@@ -175,12 +188,33 @@ def extract_data_with_gpt(text: str) -> Dict:
         return {"raw_output": raw_output}  # fallback if JSON is invalid
 
 # API endpoint
+# @app.post("/parse")
+# async def parse_resume(file: UploadFile = File(...)):
+#     if file.filename.endswith(".pdf"):
+#         text = extract_text_from_pdf(file)
+#     elif file.filename.endswith(".docx"):
+#         text = extract_text_from_docx(file)
+#     else:
+#         return JSONResponse(content={"error": "Unsupported file type"}, status_code=400)
+
+#     try:
+#         text = preprocess_text(text)
+#         extracted_data = extract_data_with_gpt(text)
+#         overall_score = calculate_overall_confidence(extracted_data)
+#         extracted_data["overall_confidence"] = overall_score
+#         return extracted_data
+
+#     except Exception as e:
+#         return JSONResponse(content={"error": str(e)}, status_code=500)
+
 @app.post("/parse")
 async def parse_resume(file: UploadFile = File(...)):
     if file.filename.endswith(".pdf"):
         text = extract_text_from_pdf(file)
     elif file.filename.endswith(".docx"):
         text = extract_text_from_docx(file)
+    elif file.filename.endswith((".png", ".jpg", ".jpeg")):
+        text = extract_text_from_image(file)
     else:
         return JSONResponse(content={"error": "Unsupported file type"}, status_code=400)
 
@@ -190,7 +224,6 @@ async def parse_resume(file: UploadFile = File(...)):
         overall_score = calculate_overall_confidence(extracted_data)
         extracted_data["overall_confidence"] = overall_score
         return extracted_data
-
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
     
@@ -207,7 +240,7 @@ async def parse_resume(file: UploadFile = File(...)):
 #     except Exception as e:
 #         return JSONResponse(content={"error": str(e)}, status_code=500)
 
-@app.post("/parse/url")
+@app.post("/parse/Linkedin_url")
 async def parse_resume_from_url(url: str):
     try:
         text = extract_text_from_linkedin(url)
@@ -217,8 +250,10 @@ async def parse_resume_from_url(url: str):
         return extracted_data
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+    
+
 
 # Optional root route
 @app.get("/")
 def root():
-    return {"message": "Resume Parser is running. Visit /docs to test."}
+    return {"message": "Resume Parser is running. Visit /docs to test."}    
