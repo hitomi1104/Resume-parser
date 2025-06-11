@@ -3,12 +3,12 @@ from dotenv import load_dotenv
 from pathlib import Path
 import re
 
-# ✅ Force load the .env from current file location
-dotenv_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path)
+# # ✅ Force load the .env from current file location
+# dotenv_path = Path(__file__).resolve().parent / ".env"
+# load_dotenv(dotenv_path)
 
-# Debug: Print API key (remove this in production)
-print("DEBUG: OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
+# # Debug: Print API key (remove this in production)
+# print("DEBUG: OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
@@ -17,6 +17,9 @@ import fitz  # PyMuPDF for PDF parsing
 import docx
 import json
 from openai import OpenAI
+from rapidfuzz import process, fuzz
+from fastapi import Query
+import pandas as pd
 
 # Load OpenAI API key
 api_key = os.getenv("OPENAI_API_KEY")
@@ -29,6 +32,41 @@ client = OpenAI(api_key=api_key)
 # Initialize FastAPI app
 app = FastAPI()
 
+####################################### Reading CSV and compare similarities with Docs #######################################
+from rapidfuzz import fuzz, process
+
+# Load SNOMED data
+import pandas as pd
+
+df = pd.read_csv("SNOMED_mappings_scored.csv", sep=";", index_col=False)
+df = df.dropna(subset=["Dx", "SNOMED CT Code"])
+
+
+
+
+
+
+def match_indication_to_snomed(indication: str, top_n: int = 3):
+    """
+    Matches a free-text indication to the top SNOMED concept(s) using fuzzy matching.
+
+    Returns:
+        List of top N matches with score, SNOMED code, and term.
+    """
+    choices = df["Dx"].tolist()
+    matches = process.extract(indication, choices, scorer=fuzz.token_sort_ratio, limit=top_n)
+
+    results = []
+    for match_text, score, idx in matches:
+        row = df.iloc[idx]
+        results.append({
+            "match_score": score,
+            "indication": match_text,
+            "snomed_code": row["SNOMED CT Code"],
+            "abbreviation": row.get("Abbreviation", None)
+        })
+
+    return results
 ####################################### Extractors #######################################
 # Extract text from PDF
 def extract_text_from_pdf(file) -> str:
@@ -52,21 +90,6 @@ def extract_text_from_docx(file) -> str:
     doc = docx.Document(file.file)
     return " ".join([p.text for p in doc.paragraphs])
 
-# Extra text from URL
-# import requests
-# from bs4 import BeautifulSoup
-# def extract_text_from_url(url: str) -> str:
-#     try:
-#         headers = {"User-Agent": "Mozilla/5.0"}
-#         response = requests.get(url, headers=headers)
-#         soup = BeautifulSoup(response.content, "html.parser")
-
-#         # Get visible text only
-#         text = soup.get_text(separator=" ", strip=True)
-#         return text
-
-#     except Exception as e:
-#         raise ValueError(f"Error extracting text from URL: {e}")
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -192,6 +215,31 @@ def extract_data_with_gpt(text: str) -> Dict:
 
 
 
+
+############################################################################################
+####################################### API endpoint #######################################
+
+
+
+# API Endpoint for Indication Matching
+@app.get("/match/indication")
+def match_indication(input: str = Query(..., description="Free-text indication to match")):
+    # Use RapidFuzz to find top 3 matches
+    choices = snomed_df["INDICATION_TEXT"].tolist()
+    results = process.extract(input, choices, scorer=fuzz.token_sort_ratio, limit=3)
+
+    matches = []
+    for match_text, score, idx in results:
+        snomed_term = snomed_df.iloc[idx]["SNOMED_CT_INDICATION_TERM"]
+        matches.append({
+            "input_phrase": input,
+            "matched_text": match_text,
+            "snomed_term": snomed_term,
+            "similarity_score": score
+        })
+
+    return {"results": matches}
+
 # API endpoint
 @app.post("/parse")
 async def parse_resume(file: UploadFile = File(...)):
@@ -213,17 +261,6 @@ async def parse_resume(file: UploadFile = File(...)):
         return JSONResponse(content={"error": str(e)}, status_code=500)
     
 
-# @app.post("/parse/url")
-# async def parse_resume_from_url(url: str):
-#     try:
-#         text = extract_text_from_url(url)
-#         text = preprocess_text(text)
-#         extracted_data = extract_data_with_gpt(text)
-#         overall_score = calculate_overall_confidence(extracted_data)
-#         extracted_data["overall_confidence"] = overall_score
-#         return extracted_data
-#     except Exception as e:
-#         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @app.post("/parse/Linkedin_url")
 async def parse_resume_from_url(url: str):
@@ -264,4 +301,7 @@ async def parse_multiple_images(files: List[UploadFile] = File(...)):
 # Optional root route
 @app.get("/")
 def root():
-    return {"message": "Resume Parser is running. Visit /docs to test."}    
+    return {"message": "Resume Parser is running. Visit /docs to test."}   
+
+
+
