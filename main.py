@@ -2,20 +2,14 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 import re
-
-# # ✅ Force load the .env from current file location
-# dotenv_path = Path(__file__).resolve().parent / ".env"
-# load_dotenv(dotenv_path)
-
-# # Debug: Print API key (remove this in production)
-# print("DEBUG: OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
-
+import numpy as np
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from typing import Dict
 import fitz  # PyMuPDF for PDF parsing
 import docx
 import json
+import openai
 from openai import OpenAI
 from rapidfuzz import process, fuzz
 from fastapi import Query
@@ -26,47 +20,52 @@ api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
     raise ValueError("OPENAI_API_KEY is not set. Check your .env file.")
 
-# Initialize OpenAI client
 client = OpenAI(api_key=api_key)
-
-# Initialize FastAPI app
 app = FastAPI()
 
+def get_embedding(text: str, model="text-embedding-3-small") -> list:
+    response = openai.embeddings.create(model=model, input=text)
+    return response.data[0].embedding
+
 ####################################### Reading CSV and compare similarities with Docs #######################################
-from rapidfuzz import fuzz, process
 
 # Load SNOMED data
-import pandas as pd
-
 df = pd.read_csv("SNOMED_mappings_scored.csv", sep=";", index_col=False)
 df = df.dropna(subset=["Dx", "SNOMED CT Code"])
 
+# Generate or load OpenAI embeddings
+if os.path.exists("snomed_with_embeddings.pkl"):
+    print("✅ Loading precomputed SNOMED embeddings...")
+    df = pd.read_pickle("snomed_with_embeddings.pkl")
+else:
+    print("⏳ Generating embeddings for SNOMED Dx terms. This may take a while...")
+    df["embedding"] = df["Dx"].apply(lambda x: get_embedding(x))
+    df.to_pickle("snomed_with_embeddings.pkl")
 
+# Cosine similarity
+def cosine_similarity(a, b):
+    a, b = np.array(a), np.array(b)
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
-
-
-
+# Matching using OpenAI embeddings
 def match_indication_to_snomed(indication: str, top_n: int = 3):
-    """
-    Matches a free-text indication to the top SNOMED concept(s) using fuzzy matching.
-
-    Returns:
-        List of top N matches with score, SNOMED code, and term.
-    """
-    choices = df["Dx"].tolist()
-    matches = process.extract(indication, choices, scorer=fuzz.token_sort_ratio, limit=top_n)
+    input_emb = get_embedding(indication)
+    df_copy = df.copy()
+    df_copy["similarity"] = df_copy["embedding"].apply(lambda e: cosine_similarity(e, input_emb))
+    top_matches = df_copy.sort_values(by="similarity", ascending=False).head(top_n)
 
     results = []
-    for match_text, score, idx in matches:
-        row = df.iloc[idx]
+    for _, row in top_matches.iterrows():
         results.append({
-            "match_score": score,
-            "indication": match_text,
+            "similarity_score": round(row["similarity"], 4),
+            "indication": row["Dx"],
             "snomed_code": row["SNOMED CT Code"],
             "abbreviation": row.get("Abbreviation", None)
         })
 
     return results
+
+
 ####################################### Extractors #######################################
 # Extract text from PDF
 def extract_text_from_pdf(file) -> str:
@@ -218,19 +217,19 @@ def extract_data_with_gpt(text: str) -> Dict:
 
 ############################################################################################
 ####################################### API endpoint #######################################
-
+############################################################################################
 
 
 # API Endpoint for Indication Matching
 @app.get("/match/indication")
 def match_indication(input: str = Query(..., description="Free-text indication to match")):
     # Use RapidFuzz to find top 3 matches
-    choices = snomed_df["INDICATION_TEXT"].tolist()
+    choices = df["Dx"].tolist()
     results = process.extract(input, choices, scorer=fuzz.token_sort_ratio, limit=3)
 
     matches = []
     for match_text, score, idx in results:
-        snomed_term = snomed_df.iloc[idx]["SNOMED_CT_INDICATION_TERM"]
+        snomed_term = df.iloc[idx]["Dx"]
         matches.append({
             "input_phrase": input,
             "matched_text": match_text,
@@ -240,25 +239,56 @@ def match_indication(input: str = Query(..., description="Free-text indication t
 
     return {"results": matches}
 
-# API endpoint
+# API endpoint@app.post("/parse")
 @app.post("/parse")
-async def parse_resume(file: UploadFile = File(...)):
-    if file.filename.endswith(".pdf"):
+async def parse_resume(file: UploadFile = File(...), snomed_matches: int = 3):
+    if file.content_type == "application/pdf":
         text = extract_text_from_pdf(file)
-    elif file.filename.endswith(".docx"):
+    elif file.content_type in [
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+        "application/msword"
+    ]:
         text = extract_text_from_docx(file)
     else:
         return JSONResponse(content={"error": "Unsupported file type"}, status_code=400)
 
     try:
+        # Preprocess
         text = preprocess_text(text)
-        extracted_data = extract_data_with_gpt(text)
-        overall_score = calculate_overall_confidence(extracted_data)
-        extracted_data["overall_confidence"] = overall_score
-        return extracted_data
+
+        # Resume parsing
+        try:
+            extracted_data = extract_data_with_gpt(text)
+            overall_score = calculate_overall_confidence(extracted_data)
+            extracted_data["overall_confidence"] = overall_score
+        except Exception as e:
+            return JSONResponse(content={"error": f"GPT extraction failed: {e}"}, status_code=500)
+
+        # SNOMED embedding match
+        try:
+            input_emb = get_embedding(text)
+            df_copy = df.copy()
+            df_copy["similarity"] = df_copy["embedding"].apply(lambda e: cosine_similarity(e, input_emb))
+            top_matches = df_copy.sort_values(by="similarity", ascending=False).head(snomed_matches)
+
+            snomed_results = []
+            for _, row in top_matches.iterrows():
+                snomed_results.append({
+                    "matched_text": row["Dx"],
+                    "snomed_code": row["SNOMED CT Code"],
+                    "similarity_score": round(row["similarity"], 4),
+                    "abbreviation": row.get("Abbreviation", None)
+                })
+        except Exception as e:
+            return JSONResponse(content={"error": f"SNOMED matching failed: {e}"}, status_code=500)
+
+        return {
+            "extracted_fields": extracted_data,
+            "snomed_matches": snomed_results
+        }
 
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        return JSONResponse(content={"error": f"General failure: {e}"}, status_code=500)
     
 
 
@@ -295,6 +325,7 @@ async def parse_multiple_images(files: List[UploadFile] = File(...)):
     overall_score = calculate_overall_confidence(extracted_data)
     extracted_data["overall_confidence"] = overall_score
     return extracted_data
+
     
 
 
